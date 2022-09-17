@@ -72,8 +72,8 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         #if not args.parallel_loader:
         #    xm.mark_step()
         xm.optimizer_step(optim)
-        xm.mark_step()
         optim.zero_grad()
+        xm.mark_step()
 
         if args.local_rank == 0:
             if not args.suppress_loss_report:
