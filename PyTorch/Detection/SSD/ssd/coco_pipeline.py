@@ -232,7 +232,7 @@ class DALICOCOIterator(object):
             labels_shape = []
             bbox_offsets = []
 
-            torch.cuda.synchronize()
+            #torch.cuda.synchronize()
             for j in range(len(labels)):
                 labels_shape.append([])
                 bbox_offsets.append([0])
