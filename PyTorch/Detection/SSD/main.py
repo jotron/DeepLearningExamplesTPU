@@ -120,6 +120,8 @@ def make_parser():
                         help='Upload data to devie in Background')
     parser.add_argument('--num_cores', type=int, default=8,
                         help='Number of tpu cores')
+    parser.add_argument('--suppress_loss_report', action='store_true',
+                        help='Dont print loss')
 
     return parser
 

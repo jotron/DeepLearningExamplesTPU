@@ -178,7 +178,7 @@ class Loss(nn.Module):
 
         # postive mask will never selected
         con_neg = con.clone()
-        con_neg[mask] = 0
+        con_neg.masked_fill_(mask, 0) # instead of con_neg[mask] = 0
         _, con_idx = con_neg.sort(dim=1, descending=True)
         _, con_rank = con_idx.sort(dim=1)
 

@@ -19,7 +19,6 @@ import torch_xla
 import torch_xla.core.xla_model as xm
 
 def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
-    print(f"local_rank: {args.local_rank}, logger: {logger}")
     for nbatch, data in enumerate(train_dataloader):
         img = data[0][0][0]
         bbox = data[0][1][0]
@@ -41,9 +40,9 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             bbox_offsets = bbox_offsets.to(device)
 
         N = img.shape[0]
-        if bbox_offsets[-1].item() == 0:
-            print("No labels in batch")
-            continue
+        #if bbox_offsets[-1].item() == 0:
+        #    print("No labels in batch")
+        #    continue
 
         # output is ([N*8732, 4], [N*8732], need [N, 8732, 4], [N, 8732] respectively
         M = bbox.shape[0] // N
@@ -71,7 +70,9 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         optim.zero_grad()
 
         if args.local_rank == 0:
-            logger.update_iter(epoch, iteration, loss.item())
+            loss_report = 0.0
+            if not args.suppress_loss_report: loss_report = loss.item()
+            logger.update_iter(epoch, iteration, loss_report)
         iteration += 1
 
     return iteration
