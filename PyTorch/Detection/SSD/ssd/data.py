@@ -31,7 +31,7 @@ def get_train_loader(args, local_seed):
         file_root=train_coco_root,
         annotations_file=train_annotate,
         default_boxes=dboxes300_coco(),
-        device_id=args.local_rank,
+        device_id=None,
         num_shards=args.N_gpu,
         output_fp16=args.amp,
         output_nhwc=False,
@@ -70,5 +70,5 @@ def get_val_dataloader(dataset, args):
 
 def get_coco_ground_truth(args):
     val_annotate = os.path.join(args.data, "annotations/instances_val2017.json")
-    cocoGt = COCO(annotation_file=val_annotate, use_ext=True)
+    cocoGt = COCO(annotation_file=val_annotate)
     return cocoGt
