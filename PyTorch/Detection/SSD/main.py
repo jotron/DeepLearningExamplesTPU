@@ -157,11 +157,10 @@ def train(index, train_loop_func, logger, args):
     print(f"XLA DEVICE SETUP. {args.local_rank}")
 
     # DEBUG LOGGER
-    if args.local_rank != 0:
-        print("disabling logger")
-        logger = None
-    else:
-        logger.update_iter(3, 5, 6)
+    if args.local_rank == 0 and logger is None:
+        logger = Logger('Training logger', log_interval=args.log_interval,
+                        json_output=args.json_summary)
+        print("Initialized Logger!")
 
     # Setup data, defaults
     dboxes = dboxes300_coco()
@@ -309,8 +308,9 @@ if __name__ == "__main__":
         args.epochs = 1
     else:
         train_loop_func = train_loop
-        logger = Logger('Training logger', log_interval=args.log_interval,
-                        json_output=args.json_summary)
+        #logger = Logger('Training logger', log_interval=args.log_interval,
+        #                json_output=args.json_summary)
+        logger = None
 
     log_params(logger, args)
 
