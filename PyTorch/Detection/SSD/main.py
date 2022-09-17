@@ -156,6 +156,13 @@ def train(index, train_loop_func, logger, args):
     xm.rendezvous("setup of training")
     print(f"XLA DEVICE SETUP. {args.local_rank}")
 
+    # DEBUG LOGGER
+    if args.local_rank != 0:
+        print("disabling logger")
+        logger = None
+    else:
+        logger.update_iter(3, 5, 6)
+
     # Setup data, defaults
     dboxes = dboxes300_coco()
     encoder = Encoder(dboxes)
@@ -250,8 +257,9 @@ def train(index, train_loop_func, logger, args):
             torch.save(obj, save_path)
             logger.log('model path', save_path)
         train_loader.reset()
-    DLLogger.log((), { 'total time': total_time })
-    logger.log_summary()
+    if args.local_rank == 0:
+        DLLogger.log((), { 'total time': total_time })
+        logger.log_summary()
 
 
 def log_params(logger, args):
