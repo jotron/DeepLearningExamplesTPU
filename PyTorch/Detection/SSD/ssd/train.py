@@ -19,6 +19,7 @@ import torch_xla
 import torch_xla.core.xla_model as xm
 
 def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
+    print(f"local_rank: {args.local_rank}, logger: {logger}")
     for nbatch, data in enumerate(train_dataloader):
         img = data[0][0][0]
         bbox = data[0][1][0]
