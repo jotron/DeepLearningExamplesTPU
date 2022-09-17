@@ -23,9 +23,9 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         img = data[0][0][0]
         bbox = data[0][1][0]
         label = data[0][2][0]
-        label = label.type(torch.cuda.LongTensor)
+        label = label.type(torch.long).to(device)
         bbox_offsets = data[0][3][0]
-        bbox_offsets = bbox_offsets.cuda()
+        bbox_offsets = bbox_offsets.to(device)
         img.sub_(mean).div_(std)
         if not args.no_cuda:
             img = img.cuda()
