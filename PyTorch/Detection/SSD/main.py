@@ -29,11 +29,15 @@ from ssd.data import get_train_loader, get_val_dataset, get_val_dataloader, get_
 
 import dllogger as DLLogger
 
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
+import torch_xla.distributed.xla_multiprocessing as xmp
+
 # Apex imports
 try:
     from apex.parallel import DistributedDataParallel as DDP
 except ImportError:
-    raise ImportError("Please install APEX from https://github.com/nvidia/apex")
+    print("APEX not installed")
 
 def generate_mean_std(args):
     mean_val = [0.485, 0.456, 0.406]
@@ -111,6 +115,10 @@ def make_parser():
                         help='Used for multi-process training. Can either be manually set ' +
                              'or automatically set by using \'python -m multiproc\'.')
 
+    # TPU
+    parser.add_argument('--parallel_loader', action='store_true',
+                        help='Upload data to devie in Background')
+
     return parser
 
 
@@ -139,6 +147,9 @@ def train(train_loop_func, logger, args):
     torch.manual_seed(args.seed)
     np.random.seed(seed=args.seed)
 
+    # Setup TPU
+    device = xm.xla_device()
+    print("XLA DEVICE SETUP.")
 
     # Setup data, defaults
     dboxes = dboxes300_coco()
@@ -150,7 +161,14 @@ def train(train_loop_func, logger, args):
     val_dataset = get_val_dataset(args)
     val_dataloader = get_val_dataloader(val_dataset, args)
 
-    ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path))
+    # Enable background data upload
+    if (args.parallel_loader):
+        xm.master_print("--parallel_loader enabled!")
+        train_loader = pl.MpDeviceLoader(train_loader, device)
+        val_dataloader = pl.MpDeviceLoader(val_dataloader, device)
+
+    # Upload model to device
+    ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path)).to(device)
     args.learning_rate = args.learning_rate * args.N_gpu * (args.batch_size / 32)
     start_epoch = 0
     iteration = 0
@@ -197,7 +215,7 @@ def train(train_loop_func, logger, args):
         start_epoch_time = time.time()
         iteration = train_loop_func(ssd300, loss_func, scaler,
                                     epoch, optimizer, train_loader, val_dataloader, encoder, iteration,
-                                    logger, args, mean, std)
+                                    logger, args, mean, std, device)
         if args.mode in ["training", "benchmark-training"]:
             scheduler.step()
         end_epoch_time = time.time() - start_epoch_time

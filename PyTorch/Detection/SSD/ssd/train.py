@@ -15,10 +15,10 @@
 from torch.autograd import Variable
 import torch
 import time
+import torch_xla
+import torch_xla.core.xla_model as xm
 
-from apex import amp
-
-def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std):
+def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
     for nbatch, data in enumerate(train_dataloader):
         img = data[0][0][0]
         bbox = data[0][1][0]
@@ -32,6 +32,12 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             bbox = bbox.cuda()
             label = label.cuda()
             bbox_offsets = bbox_offsets.cuda()
+
+        if not args.parallel_loader:
+            img = img.to(device)
+            bbox = bbox.to(device)
+            label = label.to(device)
+            bbox_offsets = bbox_offsets.to(device)
 
         N = img.shape[0]
         if bbox_offsets[-1].item() == 0:
@@ -47,7 +53,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             ploc, plabel = model(img)
 
             ploc, plabel = ploc.float(), plabel.float()
-            trans_bbox = bbox.transpose(1, 2).contiguous().cuda()
+            trans_bbox = bbox.transpose(1, 2).contiguous().to(device)
             gloc = Variable(trans_bbox, requires_grad=False)
             glabel = Variable(label, requires_grad=False)
 
@@ -58,6 +64,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
         scaler.scale(loss).backward()
         scaler.step(optim)
+        xm.mark_step()
         scaler.update()
         optim.zero_grad()
 
