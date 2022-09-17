@@ -68,9 +68,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             scale_gradients(optim, 1.0/args.accumulation)
             xm.optimizer_step(optim)
             optim.zero_grad()
-            xm.master_print("sync")
         else:
-            xm.master_print("acc")
             xm.mark_step()
             scaler.update()
 
