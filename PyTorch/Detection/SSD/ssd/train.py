@@ -63,11 +63,14 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             warmup(optim, args.warmup, iteration, args.learning_rate)
 
         scaler.scale(loss).backward()
-        #scaler.step(optim)
-        if ((iteration + 1) % args.accumulation == 0):
+        
+        if (iteration % args.accumulation == 0):
             scale_gradients(optim, 1.0/args.accumulation)
             xm.optimizer_step(optim)
             optim.zero_grad()
+            xm.master_print("sync")
+        xm.master_print("acc")
+
         xm.mark_step()
         scaler.update()
 
@@ -223,4 +226,4 @@ def scale_gradients(optimizer, scale):
         if group == 'params':
           for p in params:
             if isinstance(p, torch.Tensor) and p.grad is not None:
-                p.grad *= scale
+                p.grad.mul_(scale)
