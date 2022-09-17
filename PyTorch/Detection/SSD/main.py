@@ -211,6 +211,9 @@ def train(train_loop_func, logger, args):
     scaler = torch.cuda.amp.GradScaler(enabled=args.amp)
     mean, std = generate_mean_std(args, device)
 
+    # Print Epoch Length
+    xm.master_print(f"Epoch Iterations: {len(train_loader)}")
+
     for epoch in range(start_epoch, args.epochs):
         start_epoch_time = time.time()
         iteration = train_loop_func(ssd300, loss_func, scaler,
