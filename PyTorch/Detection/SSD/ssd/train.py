@@ -70,9 +70,10 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         optim.zero_grad()
 
         if args.local_rank == 0:
-            loss_report = 0.0
-            if not args.suppress_loss_report: loss_report = loss.item()
-            logger.update_iter(epoch, iteration, loss_report)
+            if not args.suppress_loss_report:
+                logger.update_iter(epoch, iteration, loss.item())
+            elif iteration % args.log_interval==0:
+                logger.update_iter(epoch, iteration, loss.item())
         iteration += 1
 
     return iteration
