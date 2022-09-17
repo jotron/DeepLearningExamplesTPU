@@ -23,6 +23,9 @@ import torch
 import nvidia.dali as dali
 from nvidia.dali.pipeline import Pipeline
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 class COCOPipeline(Pipeline):
     def __init__(self, batch_size, file_root, annotations_file, default_boxes,
@@ -243,11 +246,9 @@ class DALICOCOIterator(object):
                     labels_shape[j].append(lshape)
 
             # We always need to alocate new memory as bboxes and labels varies in shape
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                images_torch_type = to_torch_type[np.dtype(images[0].dtype())]
-                bboxes_torch_type = to_torch_type[np.dtype(bboxes[0][0].dtype())]
-                labels_torch_type = to_torch_type[np.dtype(labels[0][0].dtype())]
+            images_torch_type = to_torch_type[np.dtype(images[0].dtype())]
+            bboxes_torch_type = to_torch_type[np.dtype(bboxes[0][0].dtype())]
+            labels_torch_type = to_torch_type[np.dtype(labels[0][0].dtype())]
 
             #torch_gpu_device = torch.device('cuda', dev_id)
             torch_cpu_device = torch.device('cpu')
