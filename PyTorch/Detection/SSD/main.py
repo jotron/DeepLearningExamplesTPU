@@ -39,12 +39,12 @@ try:
 except ImportError:
     print("APEX not installed")
 
-def generate_mean_std(args):
+def generate_mean_std(args, device):
     mean_val = [0.485, 0.456, 0.406]
     std_val = [0.229, 0.224, 0.225]
 
-    mean = torch.tensor(mean_val).cuda()
-    std = torch.tensor(std_val).cuda()
+    mean = torch.tensor(mean_val).to(device)
+    std = torch.tensor(std_val).to(device)
 
     view = [1, len(mean_val), 1, 1]
 
@@ -209,7 +209,7 @@ def train(train_loop_func, logger, args):
         return
 
     scaler = torch.cuda.amp.GradScaler(enabled=args.amp)
-    mean, std = generate_mean_std(args)
+    mean, std = generate_mean_std(args, device)
 
     for epoch in range(start_epoch, args.epochs):
         start_epoch_time = time.time()
