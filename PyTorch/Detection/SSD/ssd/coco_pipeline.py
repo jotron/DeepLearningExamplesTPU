@@ -14,6 +14,7 @@
 import ctypes
 import time
 import logging
+import warnings
 
 import numpy as np
 import torch
@@ -242,9 +243,11 @@ class DALICOCOIterator(object):
                     labels_shape[j].append(lshape)
 
             # We always need to alocate new memory as bboxes and labels varies in shape
-            images_torch_type = to_torch_type[np.dtype(images[0].dtype)]
-            bboxes_torch_type = to_torch_type[np.dtype(bboxes[0][0].dtype)]
-            labels_torch_type = to_torch_type[np.dtype(labels[0][0].dtype)]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                images_torch_type = to_torch_type[np.dtype(images[0].dtype())]
+                bboxes_torch_type = to_torch_type[np.dtype(bboxes[0][0].dtype())]
+                labels_torch_type = to_torch_type[np.dtype(labels[0][0].dtype())]
 
             #torch_gpu_device = torch.device('cuda', dev_id)
             torch_cpu_device = torch.device('cpu')
