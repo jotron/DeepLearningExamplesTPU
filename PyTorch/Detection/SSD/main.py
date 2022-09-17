@@ -160,6 +160,7 @@ def train(index, train_loop_func, logger, args):
     if args.local_rank == 0 and logger is None:
         logger = Logger('Training logger', log_interval=args.log_interval,
                         json_output=args.json_summary)
+        log_params(logger, args)
         print("Initialized Logger!")
 
     # Setup data, defaults
@@ -311,7 +312,4 @@ if __name__ == "__main__":
         #logger = Logger('Training logger', log_interval=args.log_interval,
         #                json_output=args.json_summary)
         logger = None
-
-    log_params(logger, args)
-
     xmp.spawn(train, args=(train_loop_func, logger, args), nprocs=args.num_cores)
