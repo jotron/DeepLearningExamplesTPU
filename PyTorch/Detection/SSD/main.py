@@ -153,7 +153,7 @@ def train(index, train_loop_func, logger, args):
     device = xm.xla_device()
     args.local_rank = xm.get_ordinal()
     xm.master_print(f"Global Batchsize is {xm.xrt_world_size() * args.batch_size}")
-    xm.rendezvous()
+    xm.rendezvous("setup of training")
     print(f"XLA DEVICE SETUP. {args.local_rank}")
 
     # Setup data, defaults
@@ -174,7 +174,7 @@ def train(index, train_loop_func, logger, args):
 
     # Upload model to device
     ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path)).to(device)
-    args.learning_rate = args.learning_rate * args.N_gpu * (args.batch_size / 32)
+    args.learning_rate = args.learning_rate * xm.xrt_world_size() * (args.batch_size / 32)
     start_epoch = 0
     iteration = 0
     loss_func = Loss(dboxes)
