@@ -118,11 +118,13 @@ def make_parser():
     # TPU
     parser.add_argument('--parallel_loader', action='store_true',
                         help='Upload data to devie in Background')
+    parser.add_argument('--num_cores', type=int, default=8,
+                        help='Number of tpu cores')
 
     return parser
 
 
-def train(train_loop_func, logger, args):
+def train(index, train_loop_func, logger, args):
     # Check that GPUs are actually available
     use_cuda = not args.no_cuda
 
@@ -149,7 +151,10 @@ def train(train_loop_func, logger, args):
 
     # Setup TPU
     device = xm.xla_device()
-    print("XLA DEVICE SETUP.")
+    args.local_rank = xm.get_ordinal()
+    xm.master_print(f"Global Batchsize is {xm.xrt_world_size() * args.batch_size}")
+    xm.rendezvous()
+    print(f"XLA DEVICE SETUP. {args.local_rank}")
 
     # Setup data, defaults
     dboxes = dboxes300_coco()
@@ -301,4 +306,4 @@ if __name__ == "__main__":
 
     log_params(logger, args)
 
-    train(train_loop_func, logger, args)
+    xmp.spawn(train, args=(train_loop_func, logger, args), nprocs=args.num_cores)

@@ -63,7 +63,8 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             warmup(optim, args.warmup, iteration, args.learning_rate)
 
         scaler.scale(loss).backward()
-        scaler.step(optim)
+        #scaler.step(optim)
+        xm.optimizer_step(optim)
         xm.mark_step()
         scaler.update()
         optim.zero_grad()
