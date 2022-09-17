@@ -64,10 +64,12 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
         scaler.scale(loss).backward()
         #scaler.step(optim)
-        xm.optimizer_step(optim)
+        if ((iteration + 1) % args.accumulation == 0):
+            scale_gradients(optim, 1.0/args.accumulation)
+            xm.optimizer_step(optim)
+            optim.zero_grad()
         xm.mark_step()
         scaler.update()
-        optim.zero_grad()
 
         if args.local_rank == 0:
             if not args.suppress_loss_report:
@@ -213,3 +215,12 @@ def tencent_trick(model):
             decay.append(param)
     return [{'params': no_decay, 'weight_decay': 0.0},
             {'params': decay}]
+
+
+def scale_gradients(optimizer, scale):
+    for param_group in optimizer.__getstate__()['param_groups']:
+      for group, params in param_group.items():
+        if group == 'params':
+          for p in params:
+            if isinstance(p, torch.Tensor) and p.grad is not None:
+                p.grad *= scale
