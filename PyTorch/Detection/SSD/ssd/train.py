@@ -69,10 +69,10 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             xm.optimizer_step(optim)
             optim.zero_grad()
             xm.master_print("sync")
-        xm.master_print("acc")
-
-        xm.mark_step()
-        scaler.update()
+        else:
+            xm.master_print("acc")
+            xm.mark_step()
+            scaler.update()
 
         if args.local_rank == 0:
             if not args.suppress_loss_report:
