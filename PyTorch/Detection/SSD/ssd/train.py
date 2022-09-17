@@ -64,13 +64,16 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
         scaler.scale(loss).backward()
         
-        if (iteration % args.accumulation == 0):
-            if args.accumulation > 1:
-                scale_gradients(optim, 1.0/args.accumulation)
-            xm.optimizer_step(optim)
-            optim.zero_grad()
-        if not args.parallel_loader:
-            xm.mark_step()
+        #if (iteration % args.accumulation == 0):
+        #    if args.accumulation > 1:
+        #        scale_gradients(optim, 1.0/args.accumulation)
+        #    xm.optimizer_step(optim)
+        #    optim.zero_grad()
+        #if not args.parallel_loader:
+        #    xm.mark_step()
+        xm.optimizer_step(optim)
+        xm.mark_step()
+        optim.zero_grad()
 
         if args.local_rank == 0:
             if not args.suppress_loss_report:
