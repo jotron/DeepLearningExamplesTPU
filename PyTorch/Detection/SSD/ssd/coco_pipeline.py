@@ -60,16 +60,16 @@ class COCOPipeline(Pipeline):
                                             allow_no_crop=True,
                                             num_attempts=1)
         ## Color twist
-        self.hsv = dali.ops.Hsv(device="gpu",
+        self.hsv = dali.ops.Hsv(device="cpu",
                                 dtype=dali.types.FLOAT)  # use float to avoid clipping and quantizing the intermediate result
-        self.bc = dali.ops.BrightnessContrast(device="gpu",
+        self.bc = dali.ops.BrightnessContrast(device="cpu",
                                               contrast_center=128,  # input is in the [0, 255] range
                                               dtype=dali.types.UINT8)
         ## Cropping and normalization
         dtype = dali.types.FLOAT16 if output_fp16 else dali.types.FLOAT
         output_layout = dali.types.NHWC if output_nhwc else dali.types.NCHW
         self.normalize = dali.ops.CropMirrorNormalize(
-            device="gpu",
+            device="cpu",
             crop=(300, 300),
             mean=[0.0, 0.0, 0.0],
             std=[255.0, 255.0, 255.0],
@@ -112,7 +112,7 @@ class COCOPipeline(Pipeline):
         images = self.flip(images, horizontal=coin_rnd)
         bboxes = self.bbflip(bboxes, horizontal=coin_rnd)
         images = self.resize(images)
-        images = images.gpu()
+        #images = images.gpu()
 
         images = self.hsv(images, hue=hue, saturation=saturation)
         images = self.bc(images, brightness=brightness, contrast=contrast)
@@ -121,7 +121,7 @@ class COCOPipeline(Pipeline):
         bboxes, labels = self.box_encoder(bboxes, labels)
 
         # bboxes and images and labels on GPU
-        return (images, bboxes.gpu(), labels.gpu())
+        return (images, bboxes, labels)
 
 to_torch_type = {
     np.dtype(np.float32) : torch.float32,
@@ -246,12 +246,12 @@ class DALICOCOIterator(object):
             bboxes_torch_type = to_torch_type[np.dtype(bboxes[0][0].dtype())]
             labels_torch_type = to_torch_type[np.dtype(labels[0][0].dtype())]
 
-            torch_gpu_device = torch.device('cuda', dev_id)
+            #torch_gpu_device = torch.device('cuda', dev_id)
             torch_cpu_device = torch.device('cpu')
 
-            pyt_images = [torch.zeros(shape, dtype=images_torch_type, device=torch_gpu_device) for shape in images_shape]
-            pyt_bboxes = [[torch.zeros(shape, dtype=bboxes_torch_type, device=torch_gpu_device) for shape in shape_list] for shape_list in bboxes_shape]
-            pyt_labels = [[torch.zeros(shape, dtype=labels_torch_type, device=torch_gpu_device) for shape in shape_list] for shape_list in labels_shape]
+            pyt_images = [torch.zeros(shape, dtype=images_torch_type, device=torch_cpu_device) for shape in images_shape]
+            pyt_bboxes = [[torch.zeros(shape, dtype=bboxes_torch_type, device=torch_cpu_device) for shape in shape_list] for shape_list in bboxes_shape]
+            pyt_labels = [[torch.zeros(shape, dtype=labels_torch_type, device=torch_cpu_device) for shape in shape_list] for shape_list in labels_shape]
             pyt_offsets = [torch.zeros(len(offset), dtype=torch.int32, device=torch_cpu_device) for offset in bbox_offsets]
 
             self._data_batches[i][self._current_data_batch] = (pyt_images, pyt_bboxes, pyt_labels, pyt_offsets)
