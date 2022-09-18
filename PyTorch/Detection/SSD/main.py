@@ -32,6 +32,7 @@ import dllogger as DLLogger
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.utils.utils as xu
 
 # Apex imports
 try:
@@ -124,6 +125,8 @@ def make_parser():
                         help='Dont print loss')
     parser.add_argument('--accumulation',  type=int, default=1,
                         help='Accumulation')
+    parser.add_argument('--fake_data',  type=int, default=1,
+                        help='Use data generated on the fly')
 
     return parser
 
@@ -172,7 +175,11 @@ def train(index, train_loop_func, logger, args):
     encoder = Encoder(dboxes)
     cocoGt = get_coco_ground_truth(args)
 
-    train_loader = get_train_loader(args, args.seed - 2**31)
+    train_loader = None
+    if not args.fake_data:
+        train_loader = get_train_loader(args, args.seed - 2**31)
+    else:
+        train_loader = fake_train_loader(args, device)
 
     val_dataset = get_val_dataset(args)
     val_dataloader = get_val_dataloader(val_dataset, args)
@@ -289,8 +296,23 @@ def log_params(logger, args):
         "backbone path": args.backbone_path,
         "num workers": args.num_workers,
         "AMP": args.amp,
-        "precision": 'amp' if args.amp else 'fp32',
+        "precision": 'bf16' if os.gentenv("XLA_USE_BF16") else 'fp32',
     })
+
+
+def fake_train_loader(args, device):
+    num_samples = 100000
+    img_dim = 300
+    gen_img = lambda b,c,d,w: torch.rand([b,c,d,w], device=device)
+    gen_bbox = lambda b: torch.rand([b*8732, 4], device=device)
+    gen_offs = lambda b: torch.rand([b+1], device=device)
+    gen_label = lambda b: torch.zeros(size=[b*8732], device=device)
+    gen_x_func = lambda b,c,d,w: ((gen_img(b,c,d,w),),(gen_bbox(b),),(gen_label(b),),(gen_offs(b),))
+    gen_y_func = lambda x: 0
+
+    train_loader = xu.FnDataGenerator(gen_y_func, args.batch_size, gen_x_func, dims=[3, img_dim, img_dim], count=num_samples)
+    return train_loader
+
 
 if __name__ == "__main__":
     parser = make_parser()
