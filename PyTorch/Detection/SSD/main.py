@@ -179,6 +179,7 @@ def train(index, train_loop_func, logger, args):
     if not args.fake_data:
         train_loader = get_train_loader(args, args.seed - 2**31)
     else:
+        xm.master_print("Using fake data!")
         train_loader = fake_train_loader(args, device)
 
     val_dataset = get_val_dataset(args)
@@ -296,7 +297,7 @@ def log_params(logger, args):
         "backbone path": args.backbone_path,
         "num workers": args.num_workers,
         "AMP": args.amp,
-        "precision": 'bf16' if os.gentenv("XLA_USE_BF16") else 'fp32',
+        "precision": 'bf16' if os.getenv("XLA_USE_BF16") else 'fp32',
     })
 
 
