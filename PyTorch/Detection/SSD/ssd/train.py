@@ -23,15 +23,10 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         img = data[0][0][0]
         bbox = data[0][1][0]
         label = data[0][2][0]
-        label = label.type(torch.long).to(device)
+        label = label.type(torch.long)
         bbox_offsets = data[0][3][0]
-        bbox_offsets = bbox_offsets.to(device)
+        bbox_offsets = bbox_offsets
         img.sub_(mean).div_(std)
-        if not args.no_cuda:
-            img = img.cuda()
-            bbox = bbox.cuda()
-            label = label.cuda()
-            bbox_offsets = bbox_offsets.cuda()
 
         if not args.parallel_loader:
             img = img.to(device)
@@ -53,7 +48,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             ploc, plabel = model(img)
 
             ploc, plabel = ploc.float(), plabel.float()
-            trans_bbox = bbox.transpose(1, 2).contiguous().to(device)
+            trans_bbox = bbox.transpose(1, 2)
             gloc = Variable(trans_bbox, requires_grad=False)
             glabel = Variable(label, requires_grad=False)
 
