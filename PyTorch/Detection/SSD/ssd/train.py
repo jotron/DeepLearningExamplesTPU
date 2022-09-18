@@ -74,6 +74,9 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
                 logger.update_iter_perf(epoch, iteration, loss.item(), args.batch_size)
         iteration += 1
 
+    if ((iteration-1) % args.accumulation != 0):
+        optim.zero_grad()
+        xm.mark_step()
     return iteration
 
 
