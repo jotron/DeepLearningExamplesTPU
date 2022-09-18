@@ -14,6 +14,7 @@
 
 import math
 import numpy as np
+import time
 
 import dllogger as DLLogger
 
@@ -51,6 +52,24 @@ class IterationAverageMeter:
         self.data.append((epoch, self.sum / self.n))
         self.n = 0
         self.sum = 0
+
+class PerformanceMeter:
+    def __init__(self):
+        self.iteration = -1
+        self.last_throughput = None
+        self.last_time = time.time_ns()
+
+    def update(self, iteration, iter_size):
+        curr_time = time.time_ns()
+        delta_time = curr_time - self.last_time
+        delta_sample = (iteration - self.iteration) * iter_size
+        self.last_throughput = delta_sample * 1e9 / delta_time
+        self.last_time = curr_time
+        self.iteration = iteration
+        return self.last_throughput
+
+    def current(self):
+        return self.last_throughput
 
 
 class Logger:
@@ -99,6 +118,19 @@ class Logger:
         self.train_loss_logger.update_iter(loss)
         if iteration % self.log_interval == 0:
             self.log('loss', loss)
+
+    def update_iter_perf(self, epoch, iteration, loss, iter_size):
+        """Additionally show throughput. 
+         @iter_size: number of samples per iteration"""
+        if not hasattr(self, 'perf_meter'):
+            self.perf_meter = PerformanceMeter()
+        self.perf_meter.update(iteration, iter_size)
+        self.epoch = epoch
+        self.train_iter = iteration
+        self.train_loss_logger.update_iter(loss)
+        if iteration % self.log_interval == 0:
+            DLLogger.log(self.step(), { 'loss': loss, 'throughput': self.perf_meter.current() })
+            DLLogger.flush()
 
     def update_epoch(self, epoch, acc):
         self.epoch = epoch
