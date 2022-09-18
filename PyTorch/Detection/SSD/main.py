@@ -125,7 +125,7 @@ def make_parser():
                         help='Dont print loss')
     parser.add_argument('--accumulation',  type=int, default=1,
                         help='Accumulation')
-    parser.add_argument('--fake_data',  type=int, default=1,
+    parser.add_argument('--fake_data',  action='store_true',
                         help='Use data generated on the fly')
 
     return parser
