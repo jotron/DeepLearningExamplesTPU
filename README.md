@@ -56,6 +56,13 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 
 ### Goal
 
+- The [Nvidia repository](https://github.com/NVIDIA/DeepLearningExamples/tree/master/PyTorch/Detection/SSD#setup)  reports final accuracies of $\approx 0.25$.
+  I believe that what they report is `mAP@[0.5:0.95]`(see [mAP explanation](https://datascience.stackexchange.com/questions/16797/what-does-the-notation-map-5-95-mean)).
+- This would kind of match with the results in the original [SSD paper](https://arxiv.org/pdf/1512.02325.pdf), where they report 23.2 mAP with a different dataset (COCO2015 instead of COCO2017) and probably a slighly different training procedure.
+- The Nvidia repository shows the following loss curves:
+
+![training_loss](PyTorch/Detection/SSD/img/training_loss.png)
+
 ### Performance
 
 | Cores | Batchsize/Core | Accumulation | BF16 | Throughput | Epoch Time | Tot. Time |
