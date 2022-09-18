@@ -219,6 +219,9 @@ def train(index, train_loop_func, logger, args):
     total_time = 0
 
     if args.mode == 'evaluation':
+        if args.num_cores > 1:
+            xm.master_print("Evaluation with multiple cores not supported yet!")
+            return
         acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
         if args.local_rank == 0:
             print('Model precision {} mAP'.format(acc))
@@ -241,10 +244,10 @@ def train(index, train_loop_func, logger, args):
             logger.update_epoch_time(epoch, end_epoch_time)
 
         if epoch in args.evaluation:
-            acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
-
             if args.local_rank == 0:
+                acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
                 logger.update_epoch(epoch, acc)
+            xm.rendezvous("post-evaluation")
 
         if args.save and args.local_rank == 0:
             print("saving model...")
