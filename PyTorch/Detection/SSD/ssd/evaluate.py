@@ -44,7 +44,7 @@ def evaluate(model, coco, cocoGt, encoder, inv_map, args, device):
                 ploc, plabel = model(inp)
 
             xm.mark_step()
-            ploc, plabel = ploc.float(), plabel.float()
+            ploc, plabel = ploc.cpu().float(), plabel.cpu().float()
 
             # Handle the batch of predictions produced
             # This is slow, but consistent with old implementation.
