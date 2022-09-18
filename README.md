@@ -73,7 +73,7 @@ Using DALI for preprocessing, our workload is preprocessing/CPU bound, hence sca
 | 1     | 128              | -    | YES  | 225        | -          | -         |
 | 1     | 256              | -    | YES  | 200        | -          | -         |
 | 1     | 128 (–fake_data) | -    | YES  | 230        | -          | -         |
-| 8     | 128              | -    | YES  |            | -          | -         |
+| 8     | 128              | -    | YES  | 40-90      | -          | -         |
 | 8     | 128 (–fake_data) | -    | YES  | 200        | -          | -         |
-| 8     | 128 (–fake_data) | 10   | YES  |            | -          | -         |
+| 8     | 128 (–fake_data) | 10   | YES  | 220        | -          | -         |
 
