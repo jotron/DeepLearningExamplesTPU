@@ -65,15 +65,15 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 
 ### Performance
 
-- Batchsize 256 on single cores leads to OOM.
-- Adding more workers for single core does not improve throughput.
+Using DALI for preprocessing, our workload is preprocessing/CPU bound, hence scaling to 8 cores results in degraded performance.
 
-| Cores | Batchsize/Core | Acc. | BF16 | Throughput | Epoch Time | Tot. Time |
-| ----- | -------------- | ---- | ---- | ---------- | ---------- | --------- |
-| 1     | 128            | -    | -    | 145        | 13.5       | 16h       |
-| 1     | 128            | -    | YES  | 225        | -          | -         |
-| 1     | 256            | -    | YES  | 200        | -          | -         |
-| 8     | 64             | -    | YES  | 150        | -          | -         |
-| 8     | 128            | -    | YES  | 56         | -          | -         |
-|       |                |      |      |            |            |           |
+| Cores | Batchsize/Core   | Acc. | BF16 | Throughput | Epoch Time | Tot. Time |
+| ----- | ---------------- | ---- | ---- | ---------- | ---------- | --------- |
+| 1     | 128              | -    | -    | 145        | 13.5       | 16h       |
+| 1     | 128              | -    | YES  | 225        | -          | -         |
+| 1     | 256              | -    | YES  | 200        | -          | -         |
+| 1     | 128 (–fake_data) | -    | YES  | 230        | -          | -         |
+| 8     | 128              | -    | YES  |            | -          | -         |
+| 8     | 128 (–fake_data) | -    | YES  | 200        | -          | -         |
+| 8     | 128 (–fake_data) | 10   | YES  |            | -          | -         |
 

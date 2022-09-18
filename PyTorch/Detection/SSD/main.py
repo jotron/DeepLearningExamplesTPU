@@ -271,7 +271,10 @@ def train(index, train_loop_func, logger, args):
             save_path = os.path.join(args.save, f'epoch_{epoch}.pt')
             torch.save(obj, save_path)
             logger.log('model path', save_path)
-        train_loader.reset()
+        if not args.parallel_loader:
+            train_loader.reset()
+        else:
+            train_loader._loader.reset()
     if args.local_rank == 0:
         DLLogger.log((), { 'total time': total_time })
         logger.log_summary()
