@@ -21,7 +21,7 @@ import io
 from pycocotools.cocoeval import COCOeval
 
 
-def evaluate(model, coco, cocoGt, encoder, inv_map, args):
+def evaluate(model, coco, cocoGt, encoder, inv_map, args, device):
     if args.distributed:
         N_gpu = torch.distributed.get_world_size()
     else:
@@ -37,7 +37,7 @@ def evaluate(model, coco, cocoGt, encoder, inv_map, args):
     for nbatch, (img, img_id, img_size, _, _) in enumerate(coco):
         print("Parsing batch: {}/{}".format(nbatch, len(coco)), end='\r')
         with torch.no_grad():
-            inp = img.cuda()
+            inp = img.to(device)
             with torch.cuda.amp.autocast(enabled=args.amp):
                 # Get predictions
                 ploc, plabel = model(inp)
@@ -116,9 +116,9 @@ def evaluate(model, coco, cocoGt, encoder, inv_map, args):
         print("")
         print("Predicting Ended, total time: {:.2f} s".format(time.time() - start))
 
-    cocoDt = cocoGt.loadRes(final_results, use_ext=True)
+    cocoDt = cocoGt.loadRes(final_results)
 
-    E = COCOeval(cocoGt, cocoDt, iouType='bbox', use_ext=True)
+    E = COCOeval(cocoGt, cocoDt, iouType='bbox')
     E.evaluate()
     E.accumulate()
     if args.local_rank == 0:

@@ -219,7 +219,7 @@ def train(index, train_loop_func, logger, args):
     total_time = 0
 
     if args.mode == 'evaluation':
-        acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args)
+        acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
         if args.local_rank == 0:
             print('Model precision {} mAP'.format(acc))
         return
@@ -241,7 +241,7 @@ def train(index, train_loop_func, logger, args):
             logger.update_epoch_time(epoch, end_epoch_time)
 
         if epoch in args.evaluation:
-            acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args)
+            acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
 
             if args.local_rank == 0:
                 logger.update_epoch(epoch, acc)
