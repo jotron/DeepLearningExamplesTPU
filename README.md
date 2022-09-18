@@ -6,11 +6,15 @@ This repository is a fork of https://github.com/NVIDIA/DeepLearningExamples modi
 
 The following has been tested on a TPUv3-8 device. 
 
-1. Clone the repository
+1. Clone the repository and install dependencies
 
    ```bash
    git clone https://github.com/jotron/DeepLearningExamplesTPU
    cd DeepLearningExamplesTPU/PyTorch/Detection/SSD
+   
+   pip install pycocotools
+   pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
+   pip install --extra-index-url https://developer.download.nvidia.com/compute/redist --upgrade nvidia-dali-cuda102
    ```
 
 2. Download and preprocess the dataset with 

@@ -17,6 +17,7 @@ import time
 import numpy as np
 from contextlib import redirect_stdout
 import io
+import torch_xla.core.xla_model as xm
 
 from pycocotools.cocoeval import COCOeval
 
@@ -41,6 +42,8 @@ def evaluate(model, coco, cocoGt, encoder, inv_map, args, device):
             with torch.cuda.amp.autocast(enabled=args.amp):
                 # Get predictions
                 ploc, plabel = model(inp)
+
+            xm.mark_step()
             ploc, plabel = ploc.float(), plabel.float()
 
             # Handle the batch of predictions produced
