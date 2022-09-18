@@ -189,7 +189,6 @@ def train(index, train_loop_func, logger, args):
     if (args.parallel_loader):
         xm.master_print("--parallel_loader enabled!")
         train_loader = pl.MpDeviceLoader(train_loader, device)
-        val_dataloader = pl.MpDeviceLoader(val_dataloader, device)
 
     # Upload model to device
     ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path)).to(device)

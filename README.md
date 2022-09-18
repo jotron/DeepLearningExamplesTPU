@@ -63,6 +63,16 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 
 ![training_loss](PyTorch/Detection/SSD/img/training_loss.png)
 
+| Batchsize | Learning Rate | BF16 | ACC  |      |      |
+| --------- | ------------- | ---- | ---- | ---- | ---- |
+| 128       | Linear        | YES  | TPU1 |      |      |
+| 128       | Linear        | NO   | TPU2 |      |      |
+| 2048      | Linear        | NO   | TPU3 |      |      |
+| 4096      | Linear        | NO   | TPU4 |      |      |
+| 4096      | Root          | NO   | TPU5 |      |      |
+
+
+
 ### Performance
 
 Using DALI for preprocessing, our workload is preprocessing/CPU bound, hence scaling to 8 cores results in degraded performance.
