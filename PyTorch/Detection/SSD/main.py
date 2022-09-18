@@ -303,10 +303,10 @@ def log_params(logger, args):
 def fake_train_loader(args, device):
     num_samples = 100000
     img_dim = 300
-    gen_img = lambda b,c,d,w: torch.rand([b,c,d,w], device=device)
-    gen_bbox = lambda b: torch.rand([b*8732, 4], device=device)
-    gen_offs = lambda b: torch.rand([b+1], device=device)
-    gen_label = lambda b: torch.zeros(size=[b*8732], device=device)
+    gen_img = lambda b,c,d,w: torch.rand([b,c,d,w])
+    gen_bbox = lambda b: torch.rand([b*8732, 4])
+    gen_offs = lambda b: torch.rand([b+1])
+    gen_label = lambda b: torch.zeros(size=[b*8732])
     gen_x_func = lambda b,c,d,w: ((gen_img(b,c,d,w),),(gen_bbox(b),),(gen_label(b),),(gen_offs(b),))
     gen_y_func = lambda x: 0
 

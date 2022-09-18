@@ -73,7 +73,7 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 | 1     | 128            | -    | -    | 145        | 13.5       | 16h       |
 | 1     | 128            | -    | YES  | 225        | -          | -         |
 | 1     | 256            | -    | YES  | 200        | -          | -         |
-| 1     | 256            | -    | YES  | 150        | -          | -         |
+| 8     | 64             | -    | YES  | 150        | -          | -         |
 | 8     | 128            | -    | YES  | 56         | -          | -         |
 |       |                |      |      |            |            |           |
 
