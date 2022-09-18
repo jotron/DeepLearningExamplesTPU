@@ -61,6 +61,6 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 | Cores | Batchsize/Core | Accumulation | BF16 | Throughput | Epoch Time | Tot. Time |
 | ----- | -------------- | ------------ | ---- | ---------- | ---------- | --------- |
 | 1     | 128            | -            | -    | 106        | 18.5 min   | 21h       |
-|       |                |              |      |            |            |           |
+| 1     | 32             | -            | -    | 89         | -          | -         |
 |       |                |              |      |            |            |           |
 

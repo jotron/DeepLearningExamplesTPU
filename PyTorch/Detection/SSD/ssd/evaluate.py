@@ -49,6 +49,7 @@ def evaluate(model, coco, cocoGt, encoder, inv_map, args, device):
             # Handle the batch of predictions produced
             # This is slow, but consistent with old implementation.
             for idx in range(ploc.shape[0]):
+                print(f"handle idx {idx}")
                 # ease-of-use for specific predictions
                 ploc_i = ploc[idx, :, :].unsqueeze(0)
                 plabel_i = plabel[idx, :, :].unsqueeze(0)
