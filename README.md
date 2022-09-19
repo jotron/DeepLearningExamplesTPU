@@ -63,15 +63,16 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 
 ![training_loss](PyTorch/Detection/SSD/img/training_loss.png)
 
-| Batchsize | Learning Rate | BF16 | ACC  |      |      |
-| --------- | ------------- | ---- | ---- | ---- | ---- |
-| 128       | Linear        | YES  | TPU1 |      |      |
-| 128       | Linear        | NO   | TPU2 |      |      |
-| 2048      | Linear        | NO   | TPU3 |      |      |
-| 4096      | Linear        | NO   | TPU4 |      |      |
-| 4096      | Root          | NO   | TPU5 |      |      |
-
-
+| Batchsize | Learning Rate | BF16 | ACC          |
+| --------- | ------------- | ---- | ------------ |
+| 128       | Linear        | YES  | 0.208        |
+| 128       | Linear        | NO   | 0.259 & TPU1 |
+| 1024      | Root          | NO   | TPU2         |
+| 1024      | Linear        | NO   | TPU3         |
+| 2048      | Root          | NO   | TPU4         |
+| 2048      | Linear        | NO   | BAD          |
+| 4096      | Linear        | NO   | explodes     |
+| 4096      | Root          | NO   | explodes     |
 
 ### Performance
 

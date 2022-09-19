@@ -119,7 +119,7 @@ class Logger:
         if iteration % self.log_interval == 0:
             self.log('loss', loss)
 
-    def update_iter_perf(self, epoch, iteration, loss, iter_size):
+    def update_iter_perf(self, epoch, iteration, loss, iter_size, optim):
         """Additionally show throughput. 
          @iter_size: number of samples per iteration"""
         if not hasattr(self, 'perf_meter'):
@@ -128,8 +128,11 @@ class Logger:
         self.epoch = epoch
         self.train_iter = iteration
         self.train_loss_logger.update_iter(loss)
+        lr = optim.param_groups[0]['lr']
         if iteration % self.log_interval == 0:
-            DLLogger.log(self.step(), { 'loss': loss, 'throughput': self.perf_meter.current() })
+            DLLogger.log(self.step(), { 'loss': loss, 
+                                        'throughput': self.perf_meter.current(),
+                                        'lr': lr})
             DLLogger.flush()
 
     def update_epoch(self, epoch, acc):
