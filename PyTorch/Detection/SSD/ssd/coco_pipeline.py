@@ -28,16 +28,12 @@ class COCOPipeline(Pipeline):
     def __init__(self, batch_size, file_root, annotations_file, default_boxes,
                  device_id, num_shards,
                  output_fp16=False, output_nhwc=False, pad_output=False,
-                 num_threads=1, seed=15):
+                 num_threads=1, seed=15, shard_id=0):
         super(COCOPipeline, self).__init__(batch_size=batch_size,
                                            device_id=device_id,
                                            num_threads=num_threads,
                                            seed=seed)
 
-        if torch.distributed.is_initialized():
-            shard_id = torch.distributed.get_rank()
-        else:
-            shard_id = 0
 
         # Data loader and image decoder
         self.input = dali.ops.readers.COCO(file_root=file_root,
