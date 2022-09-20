@@ -21,7 +21,7 @@ import torch_xla.core.xla_model as xm
 def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
     # Warmup
     if args.warmup is not None:
-        warmup(optim, args.warmup, iteration, args.learning_rate)
+        warmup(optim.optimizer, args.warmup, iteration, args.learning_rate)
     
     for nbatch, data in enumerate(train_dataloader):
 
