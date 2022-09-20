@@ -54,12 +54,13 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
             loss = loss_func(ploc, plabel, gloc, glabel)
 
-        if args.warmup is not None:
-            warmup(optim, args.warmup, iteration, args.learning_rate)
 
         scaler.scale(loss).backward()
         
         if (iteration % args.accumulation == 0):
+            if args.warmup is not None:
+                step = iteration // args.accumulation
+                warmup(optim, args.warmup, step, args.learning_rate)
             if args.accumulation > 1:
                 scale_gradients(optim, 1.0/args.accumulation)
             xm.optimizer_step(optim)
