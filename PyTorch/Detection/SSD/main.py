@@ -85,7 +85,7 @@ def make_parser():
 
     # Hyperparameters
     parser.add_argument('--learning-rate', '--lr', type=float, default=2.6e-3,
-                        help='learning rate')
+                        help='learning rate for batchsize 32')
     parser.add_argument('--momentum', '-m', type=float, default=0.9,
                         help='momentum argument for SGD optimizer')
     parser.add_argument('--weight-decay', '--wd', type=float, default=0.0005,
@@ -121,12 +121,8 @@ def make_parser():
     # TPU
     parser.add_argument('--parallel_loader', action='store_true',
                         help='Upload data to devie in Background')
-    parser.add_argument('--num_cores', type=int, default=8,
+    parser.add_argument('--num_cores', type=int, default=1,
                         help='Number of tpu cores')
-    parser.add_argument('--suppress_loss_report', action='store_true',
-                        help='Dont print loss')
-    parser.add_argument('--accumulation',  type=int, default=1,
-                        help='Accumulation')
     parser.add_argument('--fake_data',  action='store_true',
                         help='Use data generated on the fly')
     parser.add_argument('--trace', type=str, default=None,
@@ -183,7 +179,6 @@ def train(index, train_loop_func, logger, args):
 
     # Upload model to device
     ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path)).to(device)
-    args.learning_rate = args.learning_rate * xm.xrt_world_size() * args.accumulation * (args.batch_size / 32)
     start_epoch = 0
     iteration = 0
     loss_func = Loss(dboxes)
@@ -192,7 +187,13 @@ def train(index, train_loop_func, logger, args):
                                 momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = MultiStepLR(optimizer=optimizer, milestones=args.multistep, gamma=0.1)
 
-    optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer)
+    # Setup Variable batchsize
+    dataset_len = 118287
+    dataset = [0] * dataset_len
+    sampler = vbs.CustomSampler(dataset, 
+        trace=args.trace if args.trace is not None else args.batch_size, 
+        num_replicas=1, rank=0, minibatch_size=32, verbose=True)
+    optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
 
     if args.distributed:
         ssd300 = DDP(ssd300)
@@ -227,6 +228,8 @@ def train(index, train_loop_func, logger, args):
     mean, std = generate_mean_std(args, device)
 
     for epoch in range(start_epoch, args.epochs):
+        sampler.set_epoch(epoch)
+        optimizer_wrapped.set_epoch(epoch)
         start_epoch_time = time.time()
         iteration = train_loop_func(ssd300, loss_func, scaler,
                                     epoch, optimizer_wrapped, train_loader, val_dataloader, encoder, iteration,

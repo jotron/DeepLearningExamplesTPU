@@ -177,7 +177,8 @@ class CustomOptimizer(object):
     if subbatches == [] or self.substep_index == len(subbatches)-1:
       grads = self._fetch_gradients()
       scale = 1.0 if self.reduction=='sum' else 1.0/self.divisors[self.step_index]
-      all_reduce_tensors(grads, scale)
+      #all_reduce_tensors(grads, scale)
+      scale_gradients(self.optimizer, scale)
       # Adjust LR
       ref_lr = self.get_lr()
       self.adapt_lr()
@@ -611,3 +612,11 @@ def all_reduce_tensors_mesh(tag, data, scale=1.0):
   reduce_fn = lambda x: np.sum(x, axis=0)
   x = xm.mesh_reduce('m', data, reduce_fn)
   return scale * x
+
+def scale_gradients(optimizer, scale):
+    for param_group in optimizer.__getstate__()['param_groups']:
+      for group, params in param_group.items():
+        if group == 'params':
+          for p in params:
+            if isinstance(p, torch.Tensor) and p.grad is not None:
+                p.grad.mul_(scale)
