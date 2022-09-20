@@ -40,7 +40,7 @@ def get_train_loader(args, local_seed):
         num_threads=args.num_workers, seed=local_seed)
     train_pipe.build()
     test_run = train_pipe.schedule_run(), train_pipe.share_outputs(), train_pipe.release_outputs()
-    train_loader = DALICOCOIterator(train_pipe, 118287 / args.N_gpu)
+    train_loader = DALICOCOIterator(train_pipe, 118287 // args.N_gpu)
     return train_loader
 
 

@@ -134,6 +134,7 @@ def make_parser():
 
 def train(index, train_loop_func, logger, args):
     args.distributed = False
+    args.N_gpu = 1
     if args.seed is None:
         args.seed = np.random.randint(1e4)
 
