@@ -185,6 +185,7 @@ def warmup(optim, warmup_iters, iteration, base_lr):
     if iteration < warmup_iters:
         new_lr = 1. * base_lr / warmup_iters * iteration
         for param_group in optim.param_groups:
+            print(f"scaling lr from {param_group['lr']} to {new_lr} at iteration {iteration}")
             param_group['lr'] = new_lr
 
 
