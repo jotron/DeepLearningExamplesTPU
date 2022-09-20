@@ -79,7 +79,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             iteration += 1
 
 
-    optim.zero_grad()
+    optim.optimizer.zero_grad()
     return iteration
 
 
