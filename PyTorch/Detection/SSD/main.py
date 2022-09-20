@@ -147,7 +147,6 @@ def train(index, train_loop_func, logger, args):
     device = xm.xla_device()
     args.local_rank = xm.get_ordinal()
     setattr(args, 'world_size', xm.xrt_world_size())
-    xm.master_print(f"Global Batchsize is {args.world_size * args.batch_size * args.accumulation}")
     xm.rendezvous("setup of training")
     print(f"XLA DEVICE SETUP. {args.local_rank}")
 
