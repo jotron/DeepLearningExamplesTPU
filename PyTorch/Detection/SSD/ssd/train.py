@@ -18,10 +18,10 @@ import time
 import torch_xla
 import torch_xla.core.xla_model as xm
 
-def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
+def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration_state, logger, args, mean, std, device):
     # Warmup
-    if args.warmup is not None:
-        warmup(optim.optimizer, args.warmup, iteration, args.learning_rate)
+    if args.warmup is not None and not args.rule == 'adascale':
+        warmup(optim.optimizer, args.warmup, iteration_state['iteration'], args.learning_rate)
     
     for nbatch, data in enumerate(train_dataloader):
 
@@ -70,18 +70,28 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
         logger.perf_meter.update(32)
 
         if isTrueStep:
-            if args.warmup is not None:
-                warmup(optim.optimizer, args.warmup, iteration+1, args.learning_rate)
+            if args.warmup is not None and args.rule != 'adascale':
+                warmup(optim.optimizer, args.warmup, iteration_state['iteration']+1, args.learning_rate)
+
+            gain = None
+            if args.rule == 'adascale':
+                gain = optim.gain()
+                avg_gain = sum(gain)/len(gain)
+                iteration_state['adascale_step'] += avg_gain
 
             if args.local_rank == 0:
-                if iteration % args.log_interval==0:
-                    logger.update_iter_perf(epoch, iteration, loss.item(), optim.optimizer)
+                if iteration_state['iteration'] % args.log_interval==0:
+                    if args.rule != 'adascale':
+                        logger.update_iter_perf(epoch, iteration_state['iteration'], loss.item(), optim.optimizer)
+                    else:
+                        logger.update_iter_ada(epoch, iteration_state['iteration'], loss.item(), optim.optimizer, gain, iteration_state['adascale_step'])
 
-            iteration += 1
+            iteration_state['iteration'] += 1
 
 
     optim.optimizer.zero_grad()
-    return iteration
+    
+    return iteration_state
 
 
 def benchmark_train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std):

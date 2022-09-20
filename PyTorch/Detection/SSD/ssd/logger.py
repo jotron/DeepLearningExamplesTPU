@@ -131,6 +131,21 @@ class Logger:
                                         'lr': lr})
             DLLogger.flush()
 
+    def update_iter_ada(self, epoch, iteration, loss, optim, gain, adastep):
+        """Additionally show throughput. 
+         @iter_size: number of samples per iteration"""
+        self.epoch = epoch
+        self.train_iter = iteration
+        self.train_loss_logger.update_iter(loss)
+        lr = optim.param_groups[0]['lr']
+        if iteration % self.log_interval == 0:
+            DLLogger.log(self.step(), { 'loss': loss, 
+                                        'throughput': self.perf_meter.current(),
+                                        'lr': lr,
+                                        'gain': gain,
+                                        'adastep': adastep})
+            DLLogger.flush()
+
     def update_epoch(self, epoch, acc):
         self.epoch = epoch
         self.train_loss_logger.update_epoch(epoch)

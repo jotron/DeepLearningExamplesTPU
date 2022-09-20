@@ -181,7 +181,7 @@ def train(index, train_loop_func, logger, args):
     # Upload model to device
     ssd300 = SSD300(backbone=ResNet(args.backbone, args.backbone_path)).to(device)
     start_epoch = 0
-    iteration = 0
+    iteration_state = dict(iteration=0)
     loss_func = Loss(dboxes)
 
     optimizer = torch.optim.SGD(tencent_trick(ssd300), lr=args.learning_rate,
@@ -197,11 +197,17 @@ def train(index, train_loop_func, logger, args):
     
     optimizer_wrapped = None
     if args.rule == 'linear':
+        print("Using Linear!")
         optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
     elif args.rule == 'root':
+        print("Using Root!")
         optimizer_wrapped = vbs.RootRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
     elif args.rule == 'adascale':
-        optimizer_wrapped = vbs.AdaScaleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
+        print("Using AdaScale!")
+        optimizer_wrapped = vbs.AdaScaleOptimizer2(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
+        iteration_state['adascale_epoch'] = 0
+        iteration_state['adascale_step'] = 0
+
 
     if args.distributed:
         ssd300 = DDP(ssd300)
@@ -212,7 +218,7 @@ def train(index, train_loop_func, logger, args):
             checkpoint = torch.load(args.checkpoint,
                                     map_location=lambda storage, loc: storage.cuda(torch.cuda.current_device()))
             start_epoch = checkpoint['epoch']
-            iteration = checkpoint['iteration']
+            iteration_state['iteration'] = checkpoint['iteration']
             scheduler.load_state_dict(checkpoint['scheduler'])
             optimizer.load_state_dict(checkpoint['optimizer'])
         else:
@@ -239,11 +245,28 @@ def train(index, train_loop_func, logger, args):
         sampler.set_epoch(epoch)
         optimizer_wrapped.set_epoch(epoch)
         start_epoch_time = time.time()
-        iteration = train_loop_func(ssd300, loss_func, scaler,
-                                    epoch, optimizer_wrapped, train_loader, val_dataloader, encoder, iteration,
+        iteration_state = train_loop_func(ssd300, loss_func, scaler,
+                                    epoch, optimizer_wrapped, train_loader, val_dataloader, encoder, iteration_state,
                                     logger, args, mean, std, device)
-        if args.mode in ["training", "benchmark-training"]:
+
+        # Compute AdaScale Epoch
+        adascale_epoch = None
+        if args.rule == 'adascale':
+            minibatches_per_epoch = 118287 // 32
+            adascale_epoch = iteration_state['adascale_step'] // minibatches_per_epoch
+
+            if (adascale_epoch != iteration_state['adascale_epoch']):
+                xm.master_print(f"-----AdaScale reaches epoch {adascale_epoch}-----")
+                assert(adascale_epoch - 1 == iteration_state['adascale_epoch'])
+                scheduler.step()
+                iteration_state['adascale_epoch'] = adascale_epoch
+
+            if adascale_epoch >= 65:
+                break
+
+        if args.mode in ["training", "benchmark-training"] and args.rule != 'adascale':
             scheduler.step()
+
         end_epoch_time = time.time() - start_epoch_time
         total_time += end_epoch_time
 
@@ -259,7 +282,7 @@ def train(index, train_loop_func, logger, args):
         if args.save and args.local_rank == 0:
             print("saving model...")
             obj = {'epoch': epoch + 1,
-                   'iteration': iteration,
+                   'iteration': iteration_state['iteration'],
                    'optimizer': optimizer.state_dict(),
                    'scheduler': scheduler.state_dict(),
                    'label_map': val_dataset.label_info}
@@ -274,6 +297,10 @@ def train(index, train_loop_func, logger, args):
             train_loader.reset()
         else:
             train_loader._loader.reset()
+    if args.rule == 'adascale':
+        print("ADASCALE FINAL EVALUATION")
+        acc = evaluate(ssd300, val_dataloader, cocoGt, encoder, inv_map, args, device)
+        print(acc)
     if args.local_rank == 0:
         DLLogger.log((), { 'total time': total_time })
         logger.log_summary()
