@@ -129,6 +129,9 @@ def make_parser():
                         help='Accumulation')
     parser.add_argument('--fake_data',  action='store_true',
                         help='Use data generated on the fly')
+    parser.add_argument('--trace', type=str, default=None,
+                        help='Trace to evaluate')
+    parser.add_argument('--rule', type=str, default='linear', choices=['linear', 'root', 'adascale'] )
 
     return parser
 
@@ -189,6 +192,8 @@ def train(index, train_loop_func, logger, args):
                                 momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = MultiStepLR(optimizer=optimizer, milestones=args.multistep, gamma=0.1)
 
+    optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer)
+
     if args.distributed:
         ssd300 = DDP(ssd300)
 
@@ -224,7 +229,7 @@ def train(index, train_loop_func, logger, args):
     for epoch in range(start_epoch, args.epochs):
         start_epoch_time = time.time()
         iteration = train_loop_func(ssd300, loss_func, scaler,
-                                    epoch, optimizer, train_loader, val_dataloader, encoder, iteration,
+                                    epoch, optimizer_wrapped, train_loader, val_dataloader, encoder, iteration,
                                     logger, args, mean, std, device)
         if args.mode in ["training", "benchmark-training"]:
             scheduler.step()
