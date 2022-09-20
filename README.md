@@ -63,16 +63,15 @@ The COCO2017 training dataset contains 118’287 images. Hence the number of ste
 
 ![training_loss](PyTorch/Detection/SSD/img/training_loss.png)
 
-| Batchsize | Learning Rate | BF16 | ACC          |
-| --------- | ------------- | ---- | ------------ |
-| 128       | Linear        | YES  | 0.208        |
-| 128       | Linear        | NO   | 0.259 & TPU1 |
-| 1024      | Root          | NO   | TPU2         |
-| 1024      | Linear        | NO   | TPU3         |
-| 2048      | Root          | NO   | TPU4         |
-| 2048      | Linear        | NO   | BAD          |
-| 4096      | Linear        | NO   | explodes     |
-| 4096      | Root          | NO   | explodes     |
+| Batchsize | Learning Rate | BF16 | Warmup | ACC   |
+| --------- | ------------- | ---- | ------ | ----- |
+| 128       | Linear        | YES  | 924    | 0.208 |
+| 128       | Linear        | NO   | 924    | 0.259 |
+| 1024      | Root          | NO   | 115    | 0.243 |
+| 1024      | Linear        | NO   | 115    | 0.257 |
+| 2048      | Root          | NO   | 115    | TPU4  |
+| 2048      | Linear        | NO   | 300    | TPU1  |
+| 4096      | Linear        | NO   | 300    | TPU3  |
 
 ### Performance
 
@@ -83,8 +82,8 @@ Using DALI for preprocessing, our workload is preprocessing/CPU bound, hence sca
 | 1     | 128              | -    | -    | 145        | 13.5       | 16h       |
 | 1     | 128              | -    | YES  | 225        | -          | -         |
 | 1     | 256              | -    | YES  | 200        | -          | -         |
-| 1     | 128 (–fake_data) | -    | YES  | 230        | -          | -         |
+| 1     | 128 (–fake_data) | -    | YES  | 1840       | -          | -         |
 | 8     | 128              | -    | YES  | 40-90      | -          | -         |
-| 8     | 128 (–fake_data) | -    | YES  | 200        | -          | -         |
-| 8     | 128 (–fake_data) | 10   | YES  | 220        | -          | -         |
+| 8     | 128 (–fake_data) | -    | YES  | 1600       | -          | -         |
+| 8     | 128 (–fake_data) | 10   | YES  | 1760       | -          | -         |
 
