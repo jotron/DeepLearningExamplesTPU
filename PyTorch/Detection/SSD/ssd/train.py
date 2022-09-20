@@ -19,7 +19,17 @@ import torch_xla
 import torch_xla.core.xla_model as xm
 
 def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dataloader, encoder, iteration, logger, args, mean, std, device):
+    # Warmup
+    if args.warmup is not None:
+        warmup(optim, args.warmup, iteration, args.learning_rate)
+    
     for nbatch, data in enumerate(train_dataloader):
+
+        # Skip batches if can't be used for full accumulation
+        if (optim.step_index == len(optim.schedule)):
+            print(f"skipped batch {nbatch}")
+            continue
+
         img = data[0][0][0]
         bbox = data[0][1][0]
         label = data[0][2][0]
@@ -54,29 +64,22 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
             loss = loss_func(ploc, plabel, gloc, glabel)
 
-        if args.warmup is not None:
-            warmup(optim, args.warmup, iteration, args.learning_rate)
 
         scaler.scale(loss).backward()
-        
-        if (iteration % args.accumulation == 0):
-            if args.accumulation > 1:
-                scale_gradients(optim, 1.0/args.accumulation)
-            xm.optimizer_step(optim)
-            optim.zero_grad()
-        
-        xm.mark_step()
+        isTrueStep = optim.step()
 
-        if args.local_rank == 0:
-            if not args.suppress_loss_report:
-                logger.update_iter_perf(epoch, iteration, loss.item(), args.batch_size, optim)
-            elif iteration % args.log_interval==0:
-                logger.update_iter_perf(epoch, iteration, loss.item(), args.batch_size, optim)
-        iteration += 1
+        if isTrueStep:
+            if args.warmup is not None:
+                warmup(optim, args.warmup, iteration, args.learning_rate)
 
-    if ((iteration-1) % args.accumulation != 0):
-        optim.zero_grad()
-        xm.mark_step()
+            if args.local_rank == 0:
+                if iteration % args.log_interval==0:
+                    logger.update_iter_perf(epoch, iteration, loss.item(), args.batch_size, optim)
+
+            iteration += 1
+
+
+    optim.zero_grad()
     return iteration
 
 

@@ -272,27 +272,9 @@ def train(index, train_loop_func, logger, args):
 
 
 def log_params(logger, args):
-    logger.log_params({
-        "dataset path": args.data,
-        "epochs": args.epochs,
-        "batch size": args.batch_size,
-        "eval batch size": args.eval_batch_size,
-        "no cuda": args.no_cuda,
-        "seed": args.seed,
-        "checkpoint path": args.checkpoint,
-        "mode": args.mode,
-        "eval on epochs": args.evaluation,
-        "lr decay epochs": args.multistep,
-        "learning rate": args.learning_rate,
-        "momentum": args.momentum,
-        "weight decay": args.weight_decay,
-        "lr warmup": args.warmup,
-        "backbone": args.backbone,
-        "backbone path": args.backbone_path,
-        "num workers": args.num_workers,
-        "AMP": args.amp,
-        "precision": 'bf16' if os.getenv("XLA_USE_BF16") else 'fp32',
-    })
+    D = vars(args)
+    D["precision"] = 'bf16' if os.getenv("XLA_USE_BF16") else 'fp32'
+    logger.log_params(D)
 
 
 def fake_train_loader(args, device):

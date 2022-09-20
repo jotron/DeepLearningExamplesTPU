@@ -4,4 +4,4 @@
 export XRT_TPU_CONFIG="localservice;0;localhost:51011"
 export CHECKPOINT_DIR="./checkpoints"
 export SUMMARY_PATH=$CHECKPOINT_DIR/summary.json
-python3 main.py --backbone resnet50 --batch-size 128 --warmup 924 --data $COCO_DIR --no-cuda --seed 42 --log-interval=10 --num_cores=1 --num-workers=4 --suppress_loss_report --save $CHECKPOINT_DIR --json-summary $SUMMARY_PATH --parallel_loader
+python3 main.py --rule linear --seed 42 --backbone resnet50 --batch-size 128 --warmup 924 --data $COCO_DIR --no-cuda --log-interval=10 --num_cores=1 --num-workers=4 --save $CHECKPOINT_DIR --json-summary $SUMMARY_PATH --parallel_loader 
