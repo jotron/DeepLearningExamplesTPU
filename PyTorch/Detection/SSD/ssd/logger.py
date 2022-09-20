@@ -118,7 +118,7 @@ class Logger:
         if iteration % self.log_interval == 0:
             self.log('loss', loss)
 
-    def update_iter_perf(self, epoch, iteration, loss, iter_size, optim):
+    def update_iter_perf(self, epoch, iteration, loss, optim):
         """Additionally show throughput. 
          @iter_size: number of samples per iteration"""
         self.epoch = epoch
