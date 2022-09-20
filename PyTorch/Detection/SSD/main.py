@@ -194,7 +194,14 @@ def train(index, train_loop_func, logger, args):
     sampler = vbs.CustomSampler(dataset, 
         trace=args.trace if args.trace is not None else args.batch_size, 
         num_replicas=1, rank=0, minibatch_size=32, verbose=True)
-    optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
+    
+    optimizer_wrapped = None
+    if args.rule == 'linear':
+        optimizer_wrapped = vbs.LinearRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
+    elif args.rule == 'root':
+        optimizer_wrapped = vbs.RootRuleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
+    elif args.rule == 'adascale':
+        optimizer_wrapped = vbs.AdaScaleOptimizer(optimizer, sampler, ref_batchsize=32, log_steps=args.log_interval)
 
     if args.distributed:
         ssd300 = DDP(ssd300)
