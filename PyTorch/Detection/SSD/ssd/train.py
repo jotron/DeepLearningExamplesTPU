@@ -70,7 +70,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
         if isTrueStep:
             if args.warmup is not None:
-                warmup(optim.optimizer, args.warmup, iteration, args.learning_rate)
+                warmup(optim.optimizer, args.warmup, iteration+1, args.learning_rate)
 
             if args.local_rank == 0:
                 if iteration % args.log_interval==0:
