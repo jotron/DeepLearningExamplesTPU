@@ -55,21 +55,19 @@ class IterationAverageMeter:
 
 class PerformanceMeter:
     def __init__(self):
-        self.iteration = -1
-        self.last_throughput = None
+        self.samples = 0
         self.last_time = time.time_ns()
 
-    def update(self, iteration, iter_size):
-        curr_time = time.time_ns()
-        delta_time = curr_time - self.last_time
-        delta_sample = (iteration - self.iteration) * iter_size
-        self.last_throughput = delta_sample * 1e9 / delta_time
-        self.last_time = curr_time
-        self.iteration = iteration
-        return self.last_throughput
+    def update(self, iter_size):
+        self.samples += iter_size
 
     def current(self):
-        return self.last_throughput
+        curr_time = time.time_ns()
+        delta_time = curr_time - self.last_time
+        throughput = self.samples * 1e9 / delta_time
+        self.last_time = curr_time
+        self.samples = 0
+        return throughput
 
 
 class Logger:
@@ -79,6 +77,7 @@ class Logger:
         self.train_epoch_time_logger = EpochMeter("Training 1 epoch time")
         self.val_acc_logger = EpochMeter("Validation accuracy")
         self.log_interval = log_interval
+        self.perf_meter = PerformanceMeter()
 
         backends = [ DLLogger.StdOutBackend(DLLogger.Verbosity.DEFAULT) ]
         if json_output:
@@ -122,9 +121,6 @@ class Logger:
     def update_iter_perf(self, epoch, iteration, loss, iter_size, optim):
         """Additionally show throughput. 
          @iter_size: number of samples per iteration"""
-        if not hasattr(self, 'perf_meter'):
-            self.perf_meter = PerformanceMeter()
-        self.perf_meter.update(iteration, iter_size)
         self.epoch = epoch
         self.train_iter = iteration
         self.train_loss_logger.update_iter(loss)

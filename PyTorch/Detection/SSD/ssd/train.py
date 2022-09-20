@@ -67,6 +67,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
         scaler.scale(loss).backward()
         isTrueStep = optim.step()
+        logger.perf_meter.update(32)
 
         if isTrueStep:
             if args.warmup is not None:
@@ -74,7 +75,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
 
             if args.local_rank == 0:
                 if iteration % args.log_interval==0:
-                    logger.update_iter_perf(epoch, iteration, loss.item(), args.batch_size, optim.optimizer)
+                    logger.update_iter_perf(epoch, iteration, loss.item(), optim.optimizer)
 
             iteration += 1
 
