@@ -132,20 +132,9 @@ def make_parser():
 
 
 def train(index, train_loop_func, logger, args):
-    # Check that GPUs are actually available
-    use_cuda = not args.no_cuda
-
     # Setup multi-GPU if necessary
     args.distributed = False
-    if 'WORLD_SIZE' in os.environ:
-        args.distributed = int(os.environ['WORLD_SIZE']) > 1
-
-    if args.distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
-        args.N_gpu = torch.distributed.get_world_size()
-    else:
-        args.N_gpu = 1
+    args.N_gpu = 1
 
     if args.seed is None:
         args.seed = np.random.randint(1e4)
@@ -159,7 +148,8 @@ def train(index, train_loop_func, logger, args):
     # Setup TPU
     device = xm.xla_device()
     args.local_rank = xm.get_ordinal()
-    xm.master_print(f"Global Batchsize is {xm.xrt_world_size() * args.batch_size * args.accumulation}")
+    setattr(args, 'world_size', xm.xrt_world_size())
+    xm.master_print(f"Global Batchsize is {args.world_size * args.batch_size * args.accumulation}")
     xm.rendezvous("setup of training")
     print(f"XLA DEVICE SETUP. {args.local_rank}")
 
@@ -196,10 +186,6 @@ def train(index, train_loop_func, logger, args):
     start_epoch = 0
     iteration = 0
     loss_func = Loss(dboxes)
-
-    if use_cuda:
-        ssd300.cuda()
-        loss_func.cuda()
 
     optimizer = torch.optim.SGD(tencent_trick(ssd300), lr=args.learning_rate,
                                 momentum=args.momentum, weight_decay=args.weight_decay)
