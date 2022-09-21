@@ -465,8 +465,8 @@ class AdaScaleOptimizer2(CustomOptimizer):
       self._scale = scale
 
     # Compute sum minigradient norm_sqr over total batch
-    self.accum_grad_sqr = all_reduce_tensors_mesh(tag="accumulated_grad_norms", data=self.accum_grad_sqr, 
-      scale=1.0)
+    #self.accum_grad_sqr = all_reduce_tensors_mesh(tag="accumulated_grad_norms", data=self.accum_grad_sqr, 
+    #  scale=1.0)
 
     # Compute gradient norm_sqr
     xm.mark_step()
