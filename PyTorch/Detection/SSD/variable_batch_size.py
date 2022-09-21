@@ -443,15 +443,15 @@ class AdaScaleOptimizer2(CustomOptimizer):
   def __init__(self, optimizer, sampler, log_steps=None, ref_batchsize=32):
     super(AdaScaleOptimizer2, self).__init__(optimizer, sampler, log_steps)
     # The norm of the per-minibatch gradients get accumulated here
-    self.accum_grad_sqr = np.zeros(len(self.optimizer.param_groups))
+    self.accum_grad_sqr = np.zeros(1)
     # Exponential Moving Averages
-    self.grad_sqr_avg = np.ones(len(self.optimizer.param_groups))
-    self.grad_var_avg = np.zeros(len(self.optimizer.param_groups))
+    self.grad_sqr_avg = np.ones(1)
+    self.grad_var_avg = np.zeros(1)
     # Required to interpret learning rates from lr_schedule
     self.ref_batchsize = ref_batchsize
     self.last_grads = None
     self._scale = 1.0
-    xm.master_print(f"Model has {len(self.optimizer.param_groups)} parameter groups!")
+    xm.master_print(f"Model has {len(self._fetch_gradients_grouped())} parameter groups!")
   
   def adapt_lr(self):
     """
@@ -470,7 +470,7 @@ class AdaScaleOptimizer2(CustomOptimizer):
 
     # Compute gradient norm_sqr
     xm.mark_step()
-    grad_norm_sqr = np.zeros(len(self.optimizer.param_groups)) 
+    grad_norm_sqr = np.zeros(1) 
     for (i, grad_group) in enumerate(self._fetch_gradients_grouped()):
       for grad in grad_group:
         grad_norm_sqr[i] += grad.pow(2).sum().item()
@@ -539,14 +539,15 @@ class AdaScaleOptimizer2(CustomOptimizer):
     Provides list of gradient tensors.
     """
     gradient_groups = []
+    gradients = []
     for param_group in self.optimizer.__getstate__()['param_groups']:
-      gradients = []
       for group, params in param_group.items():
         if group == 'params':
           for p in params:
             if isinstance(p, torch.Tensor) and p.grad is not None:
               gradients.append(p.grad.data)
-      gradient_groups.append(gradients)
+    
+    gradient_groups.append(gradients)
     return gradient_groups
 
 
