@@ -76,8 +76,7 @@ def train_loop(model, loss_func, scaler, epoch, optim, train_dataloader, val_dat
             gain = None
             if args.rule == 'adascale':
                 gain = optim.gain()
-                avg_gain = sum(gain)/len(gain)
-                iteration_state['adascale_step'] += avg_gain
+                iteration_state['adascale_step'] += gain
 
             if args.local_rank == 0:
                 if iteration_state['iteration'] % args.log_interval==0:
