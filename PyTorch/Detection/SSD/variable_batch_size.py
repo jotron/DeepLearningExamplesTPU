@@ -527,7 +527,7 @@ class AdaScaleOptimizer2(CustomOptimizer):
           local_grad_sqr += (updated_grad-last_grad).pow(2).sum()
 
         self.accum_grad_sqr[0] += local_grad_sqr.item()
-        for j in range(self.last_grads):
+        for j in range(len(self.last_grads)):
           self.last_grads[j].copy_(updated_grads[j])
 
     # Perform normal step
