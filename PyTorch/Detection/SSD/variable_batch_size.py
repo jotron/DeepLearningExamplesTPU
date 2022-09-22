@@ -501,13 +501,13 @@ class AdaScaleOptimizer2(CustomOptimizer):
     var = self.grad_var_avg
     sqr = self.grad_sqr_avg
     gain = (var + sqr) / (var / self._scale + sqr)
-    return gain
+    return gain.item()
 
   def current_lr(self):
     gain_singleton = self.gain()
     ref_lr = self.get_lr()[0]
     lr = ref_lr / self.ref_batchsize * self.sampler.minibatch_size * gain_singleton
-    return tuple([lr.item() for _ in self.optimizer.param_groups])
+    return tuple([lr for _ in self.optimizer.param_groups])
 
   def step(self):
     """ For each minibatch, keep track of the norm of the individual gradient. 
