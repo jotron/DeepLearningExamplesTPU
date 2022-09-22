@@ -451,7 +451,7 @@ class AdaScaleOptimizer2(CustomOptimizer):
     self.ref_batchsize = ref_batchsize
     self.last_grads = None
     self._scale = 1.0
-    xm.master_print(f"Model has {len(self._fetch_gradients_grouped())} parameter groups!")
+    xm.master_print(f"Model has {len(self.optimizer.param_groups)} parameter groups!")
   
   def adapt_lr(self):
     """
@@ -471,9 +471,8 @@ class AdaScaleOptimizer2(CustomOptimizer):
     # Compute gradient norm_sqr
     xm.mark_step()
     grad_norm_sqr = np.zeros(1) 
-    for (i, grad_group) in enumerate(self._fetch_gradients_grouped()):
-      for grad in grad_group:
-        grad_norm_sqr[i] += grad.pow(2).sum().item()
+    for grad in self._fetch_gradients():
+      grad_norm_sqr[0] += grad.pow(2).sum().item()
 
     # Estimate grad_sqr, grad_var
     grad_var = (1.0/(scale-1.0)) * self.accum_grad_sqr - (scale/(scale-1.0)) * grad_norm_sqr
@@ -498,57 +497,41 @@ class AdaScaleOptimizer2(CustomOptimizer):
       xm.master_print(f"    Adascale: Step={self.step_index}, gain={self.gain()}, grad_var_avg={self.grad_var_avg}, grad_sqr_avg={self.grad_sqr_avg}")
 
   def gain(self):
-    """Gain, tuple, entry for each param group"""
+    """Gain"""
     var = self.grad_var_avg
     sqr = self.grad_sqr_avg
     gain = (var + sqr) / (var / self._scale + sqr)
-    return tuple(gain.tolist())
+    return gain
 
   def current_lr(self):
-    lr = [ref_lr / self.ref_batchsize * self.sampler.minibatch_size * gain for (ref_lr, gain) 
-      in zip(self.get_lr(), self.gain())]
-    return tuple(lr)
+    gain_singleton = self.gain()
+    ref_lr = self.get_lr()[0]
+    lr = ref_lr / self.ref_batchsize * self.sampler.minibatch_size * gain_singleton
+    return tuple([lr.item() for _ in self.optimizer.param_groups])
 
   def step(self):
     """ For each minibatch, keep track of the norm of the individual gradient. 
         As gradients get accumulated, take differences to measure impact of individual minibatch."""
     # List of gradient list for each parameter group
-    updated_grads = self._fetch_gradients_grouped()
+    updated_grads = self._fetch_gradients()
 
     # First step
     if self.last_grads is None:
-      self.last_grads = [[torch.zeros_like(grad, requires_grad=False) for grad in grad_group] for grad_group in updated_grads]
+      self.last_grads = [torch.zeros_like(grad, requires_grad=False) for grad in updated_grads]
 
     # Record norm of diff
     xm.mark_step()
     with torch.no_grad():
-      for i in range(len(updated_grads)):
         local_grad_sqr = torch.tensor(0.0, device=xm.xla_device())
-        for (last_grad, updated_grad) in zip(self.last_grads[i], updated_grads[i]):
+        for (last_grad, updated_grad) in zip(self.last_grads, updated_grads):
           local_grad_sqr += (updated_grad-last_grad).pow(2).sum()
 
-        self.accum_grad_sqr[i] += local_grad_sqr.item()
-        for j in range(len(self.last_grads[i])):
-          self.last_grads[i][j].copy_(updated_grads[i][j])
+        self.accum_grad_sqr[0] += local_grad_sqr.item()
+        for j in range(self.last_grads):
+          self.last_grads[j].copy_(updated_grads[j])
 
     # Perform normal step
     return super().step()
-
-  def _fetch_gradients_grouped(self):
-    """
-    Provides list of gradient tensors.
-    """
-    gradient_groups = []
-    gradients = []
-    for param_group in self.optimizer.__getstate__()['param_groups']:
-      for group, params in param_group.items():
-        if group == 'params':
-          for p in params:
-            if isinstance(p, torch.Tensor) and p.grad is not None:
-              gradients.append(p.grad.data)
-    
-    gradient_groups.append(gradients)
-    return gradient_groups
 
 
 def init_group(local_ordinal, cores_per_host=8):
