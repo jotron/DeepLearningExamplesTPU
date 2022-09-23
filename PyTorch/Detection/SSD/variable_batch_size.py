@@ -515,7 +515,7 @@ class AdaScaleOptimizer2(CustomOptimizer):
     # List of gradient list for each parameter group
     updated_grads = self._fetch_gradients()
     updated_grads_req = self._fetch_gradients_req()
-    print(f"Diff in Len: {updated_grads-updated_grads_req}", flush=True)
+    print(f"Diff in Len: {len(updated_grads)-len(updated_grads_req)}", flush=True)
     assert(len(updated_grads_req) == len(updated_grads))
 
     # First step
