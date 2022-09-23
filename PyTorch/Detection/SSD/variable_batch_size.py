@@ -514,9 +514,6 @@ class AdaScaleOptimizer2(CustomOptimizer):
         As gradients get accumulated, take differences to measure impact of individual minibatch."""
     # List of gradient list for each parameter group
     updated_grads = self._fetch_gradients()
-    updated_grads_req = self._fetch_gradients_req()
-    print(f"Diff in Len: {len(updated_grads)-len(updated_grads_req)}", flush=True)
-    assert(len(updated_grads_req) == len(updated_grads))
 
     # First step
     if self.last_grads is None:
@@ -535,19 +532,6 @@ class AdaScaleOptimizer2(CustomOptimizer):
 
     # Perform normal step
     return super().step()
-
-  def _fetch_gradients_req(self):
-    """
-    Provides list of gradient tensors.
-    """
-    gradients = []
-    for param_group in self.optimizer.__getstate__()['param_groups']:
-      for group, params in param_group.items():
-        if group == 'params':
-          for p in params:
-            if isinstance(p, torch.Tensor) and p.grad is not None and p.requires_grad:
-              gradients.append(p.grad.data)
-    return gradients
 
 
 def init_group(local_ordinal, cores_per_host=8):
